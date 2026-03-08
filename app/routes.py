@@ -42,11 +42,11 @@ def bank_page(request: Request, bank_slug: str) -> Response:
 
 
 @router.get("/{bank_slug}/qr", response_class=HTMLResponse)
-@router.get("/{bank_slug}/{path_am:int}", response_class=HTMLResponse)
+@router.get("/{bank_slug}/{path_am:float}", response_class=HTMLResponse)
 def bank_qr(
     request: Request,
     bank_slug: str,
-    path_am: int | None = None,
+    path_am: float | None = None,
     am: Annotated[str | None, Query(description="Payment amount")] = None,
     tn: Annotated[str | None, Query(description="Transaction note")] = None,
 ) -> Response:

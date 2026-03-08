@@ -61,7 +61,7 @@ async def test_qr_short_path(client: AsyncClient) -> None:
     resp = await client.get("/slice/500")
     assert resp.status_code == 200
     assert "data:image/png;base64," in resp.text
-    assert "<code>500</code>" in resp.text
+    assert "<code>500.0</code>" in resp.text
 
 
 @pytest.mark.anyio
