@@ -1,4 +1,4 @@
-from app.qr import build_upi_uri, generate_qr_png
+from app.qr import build_upi_uri, generate_qr_data_uri, generate_qr_png
 
 
 def test_basic_uri() -> None:
@@ -25,3 +25,8 @@ def test_uri_with_all_params() -> None:
 def test_generate_qr_png_returns_png_bytes() -> None:
     data = generate_qr_png("upi://pay?pa=test@upi&pn=Test")
     assert data[:8] == b"\x89PNG\r\n\x1a\n"
+
+
+def test_generate_qr_data_uri() -> None:
+    uri = generate_qr_data_uri("upi://pay?pa=test@upi&pn=Test")
+    assert uri.startswith("data:image/png;base64,")

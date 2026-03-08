@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}{{ info.bank_name }}{% endblock %}
+{% block content %}
+<h1>{{ info.bank_name }}</h1>
+<p>VPA: <code>{{ info.vpa }}</code></p>
+{% if info.ifsc %}
+<p>IFSC: <code>{{ info.ifsc }}</code></p>
+{% endif %}
+{% if info.account_number %}
+<p>Account Number: <code>{{ info.account_number }}</code></p>
+{% endif %}
+<p><a href="{{ url_for('bank_qr', bank_slug=slug) }}"><button>View QR Code</button></a></p>
+{% endblock %}

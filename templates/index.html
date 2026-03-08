@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Payment Links</h1>
+<ul>
+  {% for slug, info in banks.items() %}
+  <li><a href="{{ url_for('bank_page', bank_slug=slug) }}">{{ info.bank_name }}</a></li>
+  {% endfor %}
+</ul>
+{% endblock %}

@@ -6,6 +6,7 @@ COPY pyproject.toml uv.lock ./
 RUN uv sync --no-dev --frozen
 
 COPY app/ app/
+COPY templates/ templates/
 COPY main.py .
 
 EXPOSE 8000

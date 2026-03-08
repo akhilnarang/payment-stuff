@@ -41,18 +41,19 @@ async def test_bank_not_found(client: AsyncClient) -> None:
 
 
 @pytest.mark.anyio
-async def test_qr_returns_png(client: AsyncClient) -> None:
+async def test_qr_page(client: AsyncClient) -> None:
     resp = await client.get("/slice/qr")
     assert resp.status_code == 200
-    assert resp.headers["content-type"] == "image/png"
-    assert resp.content[:8] == b"\x89PNG\r\n\x1a\n"
+    assert "data:image/png;base64," in resp.text
+    assert "<code>akhilnarang@slc</code>" in resp.text
 
 
 @pytest.mark.anyio
 async def test_qr_with_params(client: AsyncClient) -> None:
     resp = await client.get("/slice/qr?am=100&tn=test+payment")
     assert resp.status_code == 200
-    assert resp.headers["content-type"] == "image/png"
+    assert "<code>100</code>" in resp.text
+    assert "<code>test payment</code>" in resp.text
 
 
 @pytest.mark.anyio
