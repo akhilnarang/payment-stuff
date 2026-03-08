@@ -3,7 +3,7 @@
 {% block content %}
 <h1>{{ info.bank_name }}</h1>
 <div class="card" style="text-align: center;">
-  <div id="qr"></div>
+  <div id="qr" style="display: inline-block; padding: 16px; background: #fff;"></div>
   <hr>
   <p>VPA: <code>{{ info.vpa }}</code></p>
   <form id="params" style="text-align: left;">
@@ -30,8 +30,10 @@
 
   let qr = new QRCode(qrEl, {
     text: buildUri(),
-    width: 300,
-    height: 300,
+    width: 400,
+    height: 400,
+    colorDark: "#000000",
+    colorLight: "#ffffff",
     correctLevel: QRCode.CorrectLevel.H,
   });
 
