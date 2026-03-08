@@ -1,0 +1,46 @@
+[project]
+name = "payment-stuff"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "fastapi[standard]>=0.135.1",
+    "qrcode[pil]>=8.2",
+    "uvicorn[standard]>=0.41.0",
+]
+
+[dependency-groups]
+dev = [
+    "anyio>=4.12.1",
+    "httpx>=0.28.1",
+    "pytest>=9.0.2",
+    "pytest-anyio>=0.0.0",
+    "ruff>=0.15.5",
+    "ty>=0.0.21",
+]
+
+[tool.ruff]
+target-version = "py314"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "D",       # pydocstyle — skip docstring enforcement
+    "ANN",     # flake8-annotations — skip annotation enforcement
+    "COM812",  # trailing comma — conflicts with formatter
+    "ISC001",  # single-line implicit string concat — conflicts with formatter
+    "PLR0913", # too many arguments — unavoidable for UPI parameter passthrough
+    "TC003",   # PEP 649 (Python 3.14) makes TYPE_CHECKING blocks unnecessary for stdlib imports
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "PLR2004"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ty.rules]
+possibly-unresolved-reference = "error"
+unresolved-reference = "error"
