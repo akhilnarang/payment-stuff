@@ -4,6 +4,8 @@ import io
 import qrcode
 import qrcode.constants
 
+from app.constants import UPI_CURRENCY, UPI_SCHEME
+
 
 def build_upi_uri(
     vpa: str,
@@ -12,7 +14,8 @@ def build_upi_uri(
     am: str | None = None,
     tn: str | None = None,
 ) -> str:
-    uri = f"upi://pay?pa={vpa}&pn={payee_name}&cu=INR"
+    """Build a ``upi://pay`` deep link URI with the given P2P parameters."""
+    uri = f"{UPI_SCHEME}?pa={vpa}&pn={payee_name}&cu={UPI_CURRENCY}"
     if am is not None:
         uri += f"&am={am}"
     if tn is not None:
@@ -28,6 +31,6 @@ def generate_qr_png(data: str) -> bytes:
 
 
 def generate_qr_data_uri(data: str) -> str:
-    png = generate_qr_png(data)
-    b64 = base64.b64encode(png).decode("ascii")
+    """Generate a base64 data URI from a QR PNG, for embedding in HTML."""
+    b64 = base64.b64encode(generate_qr_png(data)).decode("ascii")
     return f"data:image/png;base64,{b64}"

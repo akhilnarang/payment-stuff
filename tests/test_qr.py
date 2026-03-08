@@ -1,4 +1,4 @@
-from app.qr import build_upi_uri, generate_qr_data_uri, generate_qr_png
+from app.services.qr import build_upi_uri, generate_qr_data_uri, generate_qr_png
 
 
 def test_basic_uri() -> None:
