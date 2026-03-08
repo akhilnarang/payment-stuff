@@ -4,13 +4,12 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app.data import load_banks
-from app.routes import init_banks, router
+from app.routes import router
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
-    banks = load_banks()
-    init_banks(banks)
+    load_banks()
     yield
 
 

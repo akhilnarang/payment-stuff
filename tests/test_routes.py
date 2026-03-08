@@ -4,13 +4,12 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 
 from app.data import load_banks
-from app.routes import init_banks
 from main import app
 
 
 @pytest.fixture(autouse=True)
 def _load_bank_data() -> None:
-    init_banks(load_banks())
+    load_banks()
 
 
 @pytest.fixture

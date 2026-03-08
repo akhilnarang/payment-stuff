@@ -14,7 +14,9 @@ class BankInfo(TypedDict, total=False):
 
 type Banks = dict[str, BankInfo]
 
+banks: Banks = {}
 
-def load_banks(path: Path = DATA_PATH) -> Banks:
+
+def load_banks(path: Path = DATA_PATH) -> None:
     with path.open() as f:
-        return json.load(f)
+        banks.update(json.load(f))

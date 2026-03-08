@@ -2,16 +2,27 @@
 
 UPI payment link and QR code generator.
 
-## Docker
+## Setup
 
 ```sh
-docker run -d \
-  -p 8000:8000 \
-  -v /path/to/banks.json:/app/data/banks.json:ro \
-  ghcr.io/<owner>/payment-stuff
+uv sync
+uv run fastapi dev
 ```
 
-`banks.json` format:
+## Routes
+
+| Route | Description |
+|---|---|
+| `/` | List all banks |
+| `/{slug}` | Bank details (VPA, IFSC, account number) |
+| `/{slug}/qr` | QR code page with UPI intent button |
+| `/{slug}/{amount}` | QR code page with pre-filled amount |
+
+Query params on `/qr`: `am` (amount), `tn` (transaction note).
+
+## `banks.json`
+
+Create `data/banks.json` (gitignored — contains personal VPAs):
 
 ```json
 {
@@ -24,12 +35,17 @@ docker run -d \
 }
 ```
 
-### Routes
+## Docker
 
-| Route | Description |
-|---|---|
-| `/` | List all banks |
-| `/{slug}` | Bank details (VPA, IFSC, account number) |
-| `/{slug}/qr` | UPI QR code (PNG) |
+```sh
+docker run -d -p 8000:8000 -v /path/to/banks.json:/app/data/banks.json:ro ghcr.io/akhilnarang/payment-stuff
+```
 
-QR query params: `am` (amount), `tn` (transaction note).
+## Checks
+
+```sh
+uv run ruff check .
+uv run ruff format --check .
+uv run ty check
+uv run pytest
+```
