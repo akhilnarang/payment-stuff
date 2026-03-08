@@ -7,7 +7,7 @@ from fastapi.templating import Jinja2Templates
 from app.constants import TEMPLATES_DIR
 from app.data import banks
 from app.services.helpers import get_bank_or_404
-from app.services.qr import build_upi_uri, generate_qr_data_uri
+from app.services.qr import build_upi_uri
 
 router = APIRouter()
 _templates = Jinja2Templates(directory=TEMPLATES_DIR)
@@ -60,6 +60,5 @@ def bank_qr(
             "am": am,
             "tn": tn,
             "upi_uri": uri,
-            "qr_data_uri": generate_qr_data_uri(uri),
         },
     )

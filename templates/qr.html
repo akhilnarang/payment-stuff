@@ -3,16 +3,54 @@
 {% block content %}
 <h1>{{ info.bank_name }}</h1>
 <div class="card" style="text-align: center;">
-  <img src="{{ qr_data_uri }}" alt="UPI QR Code" style="max-width: 100%; height: auto;">
+  <div id="qr"></div>
   <hr>
   <p>VPA: <code>{{ info.vpa }}</code></p>
-  {% if am %}
-  <p>Amount: <code>{{ am }}</code></p>
-  {% endif %}
-  {% if tn %}
-  <p>Note: <code>{{ tn }}</code></p>
-  {% endif %}
-  <p><a href="{{ upi_uri }}"><button data-variant="primary">Pay with UPI</button></a></p>
+  <form id="params" style="text-align: left;">
+    <label>
+      Amount
+      <input type="number" name="am" step="any" min="1" value="{{ am or '' }}" placeholder="Optional">
+    </label>
+    <label>
+      Note
+      <input type="text" name="tn" value="{{ tn or '' }}" placeholder="Optional">
+    </label>
+  </form>
+  <p><a id="pay-link" href="{{ upi_uri }}"><button data-variant="primary">Pay with UPI</button></a></p>
 </div>
 <p><a href="{{ url_for('bank_page', bank_slug=slug) }}">&larr; Back</a></p>
+
+<script src="https://unpkg.com/qrcodejs@1.0.0/qrcode.min.js" integrity="sha384-3zSEDfvllQohrq0PHL1fOXJuC/jSOO34H46t6UQfobFOmxE5BpjjaIJY5F2/bMnU" crossorigin="anonymous"></script>
+<script>
+  const vpa = "{{ info.vpa }}";
+  const pn = "{{ info.bank_name }}";
+  const qrEl = document.getElementById("qr");
+  const payLink = document.getElementById("pay-link");
+  const form = document.getElementById("params");
+
+  let qr = new QRCode(qrEl, {
+    text: buildUri(),
+    width: 300,
+    height: 300,
+    correctLevel: QRCode.CorrectLevel.H,
+  });
+
+  function buildUri() {
+    let uri = "upi://pay?pa=" + vpa + "&pn=" + encodeURIComponent(pn) + "&cu=INR";
+    const am = form.am.value.trim();
+    const tn = form.tn.value.trim();
+    if (am) uri += "&am=" + am;
+    if (tn) uri += "&tn=" + encodeURIComponent(tn);
+    return uri;
+  }
+
+  function update() {
+    const uri = buildUri();
+    qr.clear();
+    qr.makeCode(uri);
+    payLink.href = uri;
+  }
+
+  form.addEventListener("input", update);
+</script>
 {% endblock %}
