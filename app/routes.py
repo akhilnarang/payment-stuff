@@ -71,6 +71,7 @@ def bank_qr(
             "slug": bank_slug,
             "am": am,
             "tn": tn,
+            "upi_uri": uri,
             "qr_data_uri": generate_qr_data_uri(uri),
         },
     )

@@ -12,6 +12,7 @@
   {% if tn %}
   <p>Note: <code>{{ tn }}</code></p>
   {% endif %}
+  <p><a href="{{ upi_uri }}"><button data-variant="primary">Pay with UPI</button></a></p>
 </div>
 <p><a href="{{ url_for('bank_page', bank_slug=slug) }}">&larr; Back</a></p>
 {% endblock %}
