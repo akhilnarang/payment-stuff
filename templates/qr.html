@@ -6,15 +6,11 @@
   <div id="qr" style="display: inline-block; padding: 16px; background: #fff;"></div>
   <hr>
   <p>VPA: <code>{{ info.vpa }}</code></p>
-  <form id="params" style="text-align: left;">
-    <label>
-      Amount
-      <input type="number" name="am" step="any" min="1" value="{{ am or '' }}" placeholder="Optional">
-    </label>
-    <label>
-      Note
-      <input type="text" name="tn" value="{{ tn or '' }}" placeholder="Optional">
-    </label>
+  <form id="params" style="text-align: left; margin-bottom: 1rem;">
+    <label for="am">Amount</label>
+    <input type="number" id="am" name="am" step="any" min="1" value="{{ am or '' }}" placeholder="Optional">
+    <label for="tn">Note</label>
+    <input type="text" id="tn" name="tn" value="{{ tn or '' }}" placeholder="Optional">
   </form>
   <p><a id="pay-link" href="{{ upi_uri }}"><button data-variant="primary">Pay with UPI</button></a></p>
 </div>
