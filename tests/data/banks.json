@@ -1,0 +1,12 @@
+{
+  "testbank": {
+    "bank_name": "Test Bank",
+    "vpa": "testuser@testbank",
+    "ifsc": "TEST0000001",
+    "account_number": "1234567890"
+  },
+  "otherbank": {
+    "bank_name": "Other Bank",
+    "vpa": "testuser@otherbank"
+  }
+}

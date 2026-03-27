@@ -1,15 +1,19 @@
 from collections.abc import AsyncIterator
+from pathlib import Path
 
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from app.data import load_banks
+from app.data import banks, load_banks
 from main import app
+
+TEST_DATA = Path(__file__).resolve().parent / "data" / "banks.json"
 
 
 @pytest.fixture(autouse=True)
-def _load_bank_data() -> None:
-    load_banks()
+def _load_test_data() -> None:
+    banks.clear()
+    load_banks(TEST_DATA)
 
 
 @pytest.fixture
@@ -23,14 +27,24 @@ async def client() -> AsyncIterator[AsyncClient]:
 async def test_index(client: AsyncClient) -> None:
     resp = await client.get("/")
     assert resp.status_code == 200
-    assert "Slice Small Finance Bank" in resp.text
+    assert "Test Bank" in resp.text
+    assert "Other Bank" in resp.text
 
 
 @pytest.mark.anyio
 async def test_bank_page(client: AsyncClient) -> None:
-    resp = await client.get("/slice")
+    resp = await client.get("/testbank")
     assert resp.status_code == 200
-    assert "<code>akhilnarang@slc</code>" in resp.text
+    assert "<code>testuser@testbank</code>" in resp.text
+    assert "TEST0000001" in resp.text
+    assert "1234567890" in resp.text
+
+
+@pytest.mark.anyio
+async def test_bank_page_optional_fields(client: AsyncClient) -> None:
+    resp = await client.get("/otherbank")
+    assert resp.status_code == 200
+    assert "<code>testuser@otherbank</code>" in resp.text
 
 
 @pytest.mark.anyio
@@ -41,15 +55,15 @@ async def test_bank_not_found(client: AsyncClient) -> None:
 
 @pytest.mark.anyio
 async def test_qr_page(client: AsyncClient) -> None:
-    resp = await client.get("/slice/qr")
+    resp = await client.get("/testbank/qr")
     assert resp.status_code == 200
-    assert "<code>akhilnarang@slc</code>" in resp.text
+    assert "<code>testuser@testbank</code>" in resp.text
     assert "upi://pay" in resp.text
 
 
 @pytest.mark.anyio
 async def test_qr_with_params(client: AsyncClient) -> None:
-    resp = await client.get("/slice/qr?am=100&tn=test+payment")
+    resp = await client.get("/testbank/qr?am=100&tn=test+payment")
     assert resp.status_code == 200
     assert 'value="100"' in resp.text
     assert 'value="test payment"' in resp.text
@@ -57,7 +71,7 @@ async def test_qr_with_params(client: AsyncClient) -> None:
 
 @pytest.mark.anyio
 async def test_qr_short_path(client: AsyncClient) -> None:
-    resp = await client.get("/slice/500")
+    resp = await client.get("/testbank/500")
     assert resp.status_code == 200
     assert 'value="500.0"' in resp.text
 
