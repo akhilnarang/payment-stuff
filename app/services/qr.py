@@ -1,10 +1,43 @@
 import base64
 import io
+import re
+import secrets
+from urllib.parse import quote, urlencode
 
 import qrcode
 import qrcode.constants
 
 from app.constants import UPI_CURRENCY, UPI_SCHEME
+
+_AMOUNT_RE = re.compile(r"^\d+(\.\d{1,2})?$")
+# Whole rupees at the low end; the usual UPI per-transaction cap at the top,
+# above which the bank would decline anyway. Bounding here also keeps every
+# accepted amount inside JS's exact integer range.
+MIN_PAISE = 1_00
+MAX_PAISE = 100_000_00
+
+
+def normalize_amount(raw: str) -> str:
+    """Normalise an amount to the ``123.45`` form UPI expects.
+
+    Rejects more than two decimal places, scientific notation, negatives and
+    anything outside MIN_PAISE..MAX_PAISE rather than silently rounding money.
+    """
+    raw = raw.strip()
+    if not _AMOUNT_RE.match(raw):
+        msg = f"amount must be a number with up to two decimal places, got {raw!r}"
+        raise ValueError(msg)
+    whole, _, frac = raw.partition(".")
+    paise = int(whole) * 100 + int(frac.ljust(2, "0"))
+    if not MIN_PAISE <= paise <= MAX_PAISE:
+        msg = f"amount must be between {MIN_PAISE // 100} and {MAX_PAISE // 100}"
+        raise ValueError(msg)
+    return f"{paise // 100}.{paise % 100:02d}"
+
+
+def new_tr() -> str:
+    """Fresh NPCI transaction reference id (``tr``, max 35 chars)."""
+    return secrets.token_hex(10)
 
 
 def build_upi_uri(
@@ -13,14 +46,17 @@ def build_upi_uri(
     *,
     am: str | None = None,
     tn: str | None = None,
+    tr: str | None = None,
 ) -> str:
     """Build a ``upi://pay`` deep link URI with the given P2P parameters."""
-    uri = f"{UPI_SCHEME}?pa={vpa}&pn={payee_name}&cu={UPI_CURRENCY}"
+    params = {"pa": vpa, "pn": payee_name, "cu": UPI_CURRENCY, "tr": tr or new_tr()}
     if am is not None:
-        uri += f"&am={am}"
+        params["am"] = normalize_amount(am)
     if tn is not None:
-        uri += f"&tn={tn}"
-    return uri
+        params["tn"] = tn
+    # quote_via=quote so spaces encode as %20: NPCI's spec percent-encodes the
+    # space, and "+" is form encoding that not every app decodes back to one.
+    return f"{UPI_SCHEME}?{urlencode(params, quote_via=quote)}"
 
 
 def generate_qr_png(data: str) -> bytes:

@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}QR — {{ info.bank_name }}{% endblock %}
 {% block content %}
+<style>[hidden] { display: none !important; }</style>
 <h1>{{ info.bank_name }}</h1>
 <div class="card" style="text-align: center;">
   <div id="qr" style="display: inline-block; padding: 16px; background: #fff;"></div>
@@ -8,24 +9,30 @@
   <p>VPA: <code>{{ info.vpa }}</code></p>
   <form id="params" style="text-align: left; margin-bottom: 1rem;">
     <label for="am">Amount</label>
-    <input type="number" id="am" name="am" step="any" min="1" value="{{ am or '' }}" placeholder="Optional">
+    <input type="number" id="am" name="am" step="0.01" min="1" max="100000" value="{{ am or '' }}" placeholder="Optional">
     <label for="tn">Note</label>
     <input type="text" id="tn" name="tn" value="{{ tn or '' }}" placeholder="Optional">
   </form>
+  <p id="am-error" role="alert" hidden style="color: #c00;">Enter an amount from 1 to 100000, with up to two decimal places.</p>
   <p><a id="pay-link" href="{{ upi_uri }}"><button data-variant="primary">Pay with UPI</button></a></p>
 </div>
 <p><a href="{{ url_for('bank_page', bank_slug=slug) }}">&larr; Back</a></p>
 
 <script src="https://unpkg.com/qrcodejs@1.0.0/qrcode.min.js" integrity="sha384-3zSEDfvllQohrq0PHL1fOXJuC/jSOO34H46t6UQfobFOmxE5BpjjaIJY5F2/bMnU" crossorigin="anonymous"></script>
 <script>
-  const vpa = "{{ info.vpa }}";
-  const pn = "{{ info.bank_name }}";
+  const vpa = {{ info.vpa | tojson }};
+  const pn = {{ info.bank_name | tojson }};
   const qrEl = document.getElementById("qr");
   const payLink = document.getElementById("pay-link");
+  const amError = document.getElementById("am-error");
   const form = document.getElementById("params");
+  // mirrors MIN_PAISE / MAX_PAISE in app/services/qr.py
+  const MIN_PAISE = 1 * 100;
+  const MAX_PAISE = 100000 * 100;
 
-  let qr = new QRCode(qrEl, {
-    text: buildUri(),
+  // No `text` here: update() draws the first QR, so it and the Pay button are
+  // built from one URI and therefore share a tr.
+  const qr = new QRCode(qrEl, {
     width: 400,
     height: 400,
     colorDark: "#000000",
@@ -33,22 +40,65 @@
     correctLevel: QRCode.CorrectLevel.H,
   });
 
+  // getRandomValues, not randomUUID: randomUUID needs a secure context and
+  // throws when this is served over plain HTTP on a LAN address, which would
+  // take the whole script -- and so the QR -- down with it.
+  function newTr() {
+    const bytes = crypto.getRandomValues(new Uint8Array(10));
+    return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  // Mirrors normalize_amount() in app/services/qr.py. UPI amounts carry up to
+  // two decimal places and apps differ on anything else, so normalise first.
+  // String arithmetic, not Number: exact at any size, and matches Python.
+  // Returns null for an amount we cannot represent -- never a silent fallback.
+  function amount(raw) {
+    if (!/^\d+(\.\d{1,2})?$/.test(raw)) return null;
+    const [whole, frac = ""] = raw.split(".");
+    const paise = whole.replace(/^0+(?=\d)/, "") + frac.padEnd(2, "0");
+    // Number() of an over-long paise string is Infinity, which fails this too.
+    if (!(Number(paise) >= MIN_PAISE && Number(paise) <= MAX_PAISE)) return null;
+    return paise.slice(0, -2) + "." + paise.slice(-2);
+  }
+
+  // "" means no amount, which is a valid open QR. null means the field holds
+  // something we refuse to encode.
+  function currentAmount() {
+    if (form.am.validity.badInput) return null;  // e.g. "abc", where .value is ""
+    const raw = form.am.value.trim();
+    return raw ? amount(raw) : "";
+  }
+
+  // ponytail: fresh tr per render, not per scan. A static QR can't do per-scan
+  // without a server round trip on every scan; revisit if PSPs dedupe on it.
   function buildUri() {
-    let uri = "upi://pay?pa=" + vpa + "&pn=" + encodeURIComponent(pn) + "&cu=INR";
-    const am = form.am.value.trim();
+    const am = currentAmount();
+    if (am === null) return null;
+    const p = new URLSearchParams({ pa: vpa, pn: pn, cu: "INR" });
+    if (am) p.set("am", am);
     const tn = form.tn.value.trim();
-    if (am) uri += "&am=" + am;
-    if (tn) uri += "&tn=" + encodeURIComponent(tn);
-    return uri;
+    if (tn) p.set("tn", tn);
+    p.set("tr", newTr());
+    // %20, not "+": NPCI's spec percent-encodes the space, and "+" is form
+    // encoding that not every app decodes back to one.
+    return "upi://pay?" + p.toString().replace(/\+/g, "%20");
   }
 
   function update() {
     const uri = buildUri();
+    const invalid = uri === null;
+    // Hide rather than leave a stale QR up: an unusable amount must not fall
+    // back to an open-amount request the payer fills in themselves.
+    amError.hidden = !invalid;
+    qrEl.hidden = invalid;
+    payLink.hidden = invalid;
+    if (invalid) return;
     qr.clear();
     qr.makeCode(uri);
     payLink.href = uri;
   }
 
   form.addEventListener("input", update);
+  update();
 </script>
 {% endblock %}

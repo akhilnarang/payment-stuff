@@ -65,7 +65,7 @@ async def test_qr_page(client: AsyncClient) -> None:
 async def test_qr_with_params(client: AsyncClient) -> None:
     resp = await client.get("/testbank/qr?am=100&tn=test+payment")
     assert resp.status_code == 200
-    assert 'value="100"' in resp.text
+    assert 'value="100.00"' in resp.text
     assert 'value="test payment"' in resp.text
 
 
@@ -73,7 +73,18 @@ async def test_qr_with_params(client: AsyncClient) -> None:
 async def test_qr_short_path(client: AsyncClient) -> None:
     resp = await client.get("/testbank/500")
     assert resp.status_code == 200
-    assert 'value="500.0"' in resp.text
+    assert 'value="500.00"' in resp.text
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize(
+    "path",
+    ["/testbank/12.345", "/testbank/qr?am=99.999", "/testbank/qr?am=0"],
+)
+async def test_qr_rejects_malformed_amount(client: AsyncClient, path: str) -> None:
+    """UPI silently fails the payment on a bad amount, so refuse to encode one."""
+    resp = await client.get(path)
+    assert resp.status_code == 400
 
 
 @pytest.mark.anyio
