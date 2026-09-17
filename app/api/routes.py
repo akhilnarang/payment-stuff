@@ -1,12 +1,11 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Query, Request, Response
+from fastapi import APIRouter, HTTPException, Query, Request, Response, status
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
 from app.constants import TEMPLATES_DIR
 from app.data import banks
-from app.exceptions import BadRequestException
 from app.services.helpers import get_bank_or_404
 from app.services.qr import build_upi_uri, normalize_amount
 
@@ -49,7 +48,7 @@ def bank_qr(
         try:
             am = normalize_amount(am)
         except ValueError as exc:
-            raise BadRequestException(str(exc)) from exc
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, str(exc)) from exc
 
     uri = build_upi_uri(
         vpa=info.vpa,

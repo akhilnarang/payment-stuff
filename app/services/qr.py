@@ -35,23 +35,22 @@ def normalize_amount(raw: str) -> str:
     return f"{paise // 100}.{paise % 100:02d}"
 
 
-def new_tr() -> str:
-    """Fresh NPCI transaction reference id (``tr``, max 35 chars)."""
-    return secrets.token_hex(10)
-
-
 def build_upi_uri(
     vpa: str,
     payee_name: str,
     *,
     am: str | None = None,
     tn: str | None = None,
-    tr: str | None = None,
 ) -> str:
-    """Build a ``upi://pay`` deep link URI with the given P2P parameters."""
-    params = {"pa": vpa, "pn": payee_name, "cu": UPI_CURRENCY, "tr": tr or new_tr()}
+    """Build a ``upi://pay`` deep link URI with the given P2P parameters.
+
+    ``am`` must already be normalised -- callers take untrusted input, so they
+    own the validation and the error response.
+    """
+    # tr: NPCI transaction reference, max 35 chars. Fresh per URI.
+    params = {"pa": vpa, "pn": payee_name, "cu": UPI_CURRENCY, "tr": secrets.token_hex(10)}
     if am is not None:
-        params["am"] = normalize_amount(am)
+        params["am"] = am
     if tn is not None:
         params["tn"] = tn
     # quote_via=quote so spaces encode as %20: NPCI's spec percent-encodes the

@@ -1,10 +1,15 @@
 {% extends "base.html" %}
 {% block title %}QR — {{ info.bank_name }}{% endblock %}
 {% block content %}
-<style>[hidden] { display: none !important; }</style>
+<style>
+  /* [hidden] after .qr-box: equal specificity, so the later rule wins and
+     hiding works without !important. */
+  .qr-box { display: inline-block; padding: 16px; background: #fff; }
+  [hidden] { display: none; }
+</style>
 <h1>{{ info.bank_name }}</h1>
 <div class="card" style="text-align: center;">
-  <div id="qr" style="display: inline-block; padding: 16px; background: #fff;"></div>
+  <div id="qr" class="qr-box"></div>
   <hr>
   <p>VPA: <code>{{ info.vpa }}</code></p>
   <form id="params" style="text-align: left; margin-bottom: 1rem;">

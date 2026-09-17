@@ -1,17 +1,20 @@
+import re
+
 import pytest
 
 from app.services.qr import (
     build_upi_uri,
     generate_qr_data_uri,
     generate_qr_png,
-    new_tr,
     normalize_amount,
 )
 
+TR = r"&tr=[0-9a-f]{20}(?![0-9a-f])"
+
 
 def test_basic_uri() -> None:
-    uri = build_upi_uri("test@upi", "Test Bank", tr="abc123")
-    assert uri == "upi://pay?pa=test%40upi&pn=Test%20Bank&cu=INR&tr=abc123"
+    uri = build_upi_uri("test@upi", "Test Bank")
+    assert re.fullmatch(r"upi://pay\?pa=test%40upi&pn=Test%20Bank&cu=INR" + TR, uri)
 
 
 def test_uri_with_amount() -> None:
@@ -20,18 +23,21 @@ def test_uri_with_amount() -> None:
 
 
 def test_uri_with_all_params() -> None:
-    uri = build_upi_uri("test@upi", "Test Bank", am="50", tn="Lunch", tr="ref1")
-    assert uri == "upi://pay?pa=test%40upi&pn=Test%20Bank&cu=INR&tr=ref1&am=50.00&tn=Lunch"
+    uri = build_upi_uri("test@upi", "Test Bank", am="50.00", tn="Lunch")
+    assert re.fullmatch(
+        r"upi://pay\?pa=test%40upi&pn=Test%20Bank&cu=INR" + TR + r"&am=50\.00&tn=Lunch", uri
+    )
 
 
-def test_uri_always_carries_a_transaction_reference() -> None:
-    assert "&tr=" in build_upi_uri("test@upi", "Test Bank")
-    assert new_tr() != new_tr()
+def test_uri_always_carries_a_fresh_transaction_reference() -> None:
+    found = [re.findall(TR, build_upi_uri("test@upi", "Test Bank")) for _ in range(5)]
+    assert all(len(f) == 1 for f in found)  # exactly one reference per URI
+    assert len({f[0] for f in found}) == 5  # and a different one each time
 
 
 def test_uri_escapes_separators_in_note() -> None:
     """A raw & or = in the note must not forge extra UPI parameters."""
-    uri = build_upi_uri("test@upi", "Test Bank", am="1", tn="chai & samosa&am=9999")
+    uri = build_upi_uri("test@upi", "Test Bank", am="1.00", tn="chai & samosa&am=9999")
     assert uri.count("&am=") == 1
     assert "&am=1.00" in uri
     assert "chai%20%26%20samosa%26am%3D9999" in uri
