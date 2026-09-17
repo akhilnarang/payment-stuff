@@ -6,8 +6,9 @@ from fastapi.templating import Jinja2Templates
 
 from app.constants import TEMPLATES_DIR
 from app.data import banks
+from app.exceptions import BadRequestException
 from app.services.helpers import get_bank_or_404
-from app.services.qr import build_upi_uri
+from app.services.qr import build_upi_uri, normalize_amount
 
 router = APIRouter()
 _templates = Jinja2Templates(directory=TEMPLATES_DIR)
@@ -44,6 +45,11 @@ def bank_qr(
     info = get_bank_or_404(bank_slug)
     if path_am is not None:
         am = str(path_am)
+    if am is not None:
+        try:
+            am = normalize_amount(am)
+        except ValueError as exc:
+            raise BadRequestException(str(exc)) from exc
 
     uri = build_upi_uri(
         vpa=info.vpa,
