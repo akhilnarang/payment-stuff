@@ -29,6 +29,7 @@ select = ["ALL"]
 ignore = [
     "ANN",     # flake8-annotations — skip annotation enforcement
     "COM812",  # trailing comma — conflicts with formatter
+    "CPY001",  # copyright headers — not used in this project
     "ISC001",  # single-line implicit string concat — conflicts with formatter
     "D",       # pydocstyle — docstrings only where they add value
     "D203",    # one-blank-line-before-class — conflicts with D211
